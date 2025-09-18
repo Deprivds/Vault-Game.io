@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Constellation Cipher Game</title>
+
+  <!-- =========================
+       STYLES
+  ========================== -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,7 +23,10 @@
       position: relative;
     }
 
-    h1 { color: #ffd700; margin-bottom: 20px; }
+    h1 {
+      color: #ffd700;
+      margin-bottom: 20px;
+    }
 
     #constellation {
       max-width: 80%;
@@ -49,7 +56,10 @@
       background: #ffd700;
     }
 
-    #result { margin-top: 15px; font-size: 18px; }
+    #result {
+      margin-top: 15px;
+      font-size: 18px;
+    }
 
     /* Hidden star button */
     #adminStar {
@@ -62,140 +72,190 @@
       border: none;
       cursor: pointer;
     }
-    #adminStar:hover { color: #ffd700; }
+    #adminStar:hover {
+      color: #ffd700;
+    }
   </style>
 </head>
 <body>
+  <!-- =========================
+       GAME INTERFACE
+  ========================== -->
   <h1>✨ Constellation Cipher ✨</h1>
 
   <!-- Constellation image -->
   <img id="constellation" src="" alt="Constellation">
 
-  <!-- Input box in center -->
+  <!-- Player input -->
   <input type="text" id="playerAnswer" placeholder="Enter your answer..." autofocus>
   <button id="submitBtn">Submit</button>
 
-  <!-- Result message instead of alert -->
+  <!-- Result message -->
   <p id="result"></p>
 
   <!-- Hidden Star Button -->
   <button id="adminStar" onclick="goAdmin()">★</button>
 
-<script>
-  const starBackgrounds = {
-    "Aries": "Aries.jpg",
-    "Taurus": "Taurus.jpg",
-    "Gemini": "Gemini.jpg",
-    "Cancer": "Cancer.jpg",
-    "Leo": "Leo.jpg",
-    "Virgo": "Virgo.jpg",
-    "Libra": "Libra.jpg",
-    "Scorpio": "Scorpio.jpg",
-    "Sagittarius": "Sagittarius.jpg",
-    "Capricorn": "Capricorn.jpg",
-    "Aquarius": "Aquarius.jpg",
-    "Pisces": "Pisces.jpg"
-  };
+  
+  <!-- =========================
+       JAVASCRIPT LOGIC
+  ========================== -->
+  <script>
+    /* -------------------------
+       CONSTELLATION HANDLING
+    ------------------------- */
+    const cameFromAdmin = localStorage.getItem("backFromAdmin") === "true";
 
-  // Read saved data from Admin (localStorage)
-  const chosenStar = localStorage.getItem("cipherStar") || "Aries";
+    // If NOT coming from Admin, reset constellation so refresh always gets a new one
+    if (!cameFromAdmin) {
+      localStorage.removeItem("cipherStar");
+      localStorage.removeItem("cipherAnswerCW");
+      localStorage.removeItem("cipherAnswerCCW");
+    } else {
+      // Clear the flag so next refresh works normally
+      localStorage.removeItem("backFromAdmin");
+    }
 
-  // Accept multiple saved keys for compatibility
-  const storedCW = localStorage.getItem("cipherAnswerCW");
-  const storedCCW = localStorage.getItem("cipherAnswerCCW");
-  const legacy = localStorage.getItem("cipherAnswer"); // older key used in some versions
+    // Images for each constellation
+    const starBackgrounds = {
+      "Aries": "Aries.jpg",
+      "Taurus": "Taurus.jpg",
+      "Gemini": "Gemini.jpg",
+      "Cancer": "Cancer.jpg",
+      "Leo": "Leo.jpg",
+      "Virgo": "Virgo.jpg",
+      "Libra": "Libra.jpg",
+      "Scorpio": "Scorpio.jpg",
+      "Sagittarius": "Sagittarius.jpg",
+      "Capricorn": "Capricorn.jpg",
+      "Aquarius": "Aquarius.jpg",
+      "Pisces": "Pisces.jpg"
+    };
 
-  // Build the accepted answers list (normalized)
-  let acceptedAnswers = [];
-  if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
-  if (storedCCW) acceptedAnswers.push(storedCCW.toLowerCase().trim());
-  if (legacy) acceptedAnswers.push(legacy.toLowerCase().trim());
+    // Star counts (used for Caesar shift)
+    const constellationCounts = {
+      "Aries": 5,
+      "Taurus": 11,
+      "Gemini": 8,
+      "Cancer": 5,
+      "Leo": 9,
+      "Virgo": 9,
+      "Libra": 8,
+      "Scorpio": 14,
+      "Sagittarius": 20,
+      "Capricorn": 9,
+      "Aquarius": 11,
+      "Pisces": 20
+    };
 
-  // If nothing stored, fallback to "victory" for backward compatibility / testing
-  if (acceptedAnswers.length === 0) acceptedAnswers.push("victory");
+    // Caesar cipher helper
+    function caesarShift(str, shift) {
+      return str.split("").map(char => {
+        if (/[a-z]/.test(char)) {
+          let code = char.charCodeAt(0) - 97;
+          return String.fromCharCode(((code + shift + 26) % 26) + 97);
+        } else if (/[A-Z]/.test(char)) {
+          let code = char.charCodeAt(0) - 65;
+          return String.fromCharCode(((code + shift + 26) % 26) + 65);
+        }
+        return char;
+      }).join("");
+    }
 
-  // Remove duplicates (if any)
-  acceptedAnswers = [...new Set(acceptedAnswers)];
+    // Step 1: Check if a star is already stored
+    let chosenStar = localStorage.getItem("cipherStar");
 
-  // Set constellation image (fallback if missing)
-  const imgEl = document.getElementById("constellation");
-  if (starBackgrounds[chosenStar]) {
+    // Step 2: If not stored yet, randomize and store constellation + answers
+    if (!chosenStar) {
+      const constellationKeys = Object.keys(starBackgrounds);
+      chosenStar = constellationKeys[Math.floor(Math.random() * constellationKeys.length)];
+      localStorage.setItem("cipherStar", chosenStar);
+
+      let starCount = constellationCounts[chosenStar];
+      let cw = caesarShift(chosenStar, starCount);
+      let ccw = caesarShift(chosenStar, -starCount);
+
+      // 🔹 Always overwrite in case numbers changed
+      localStorage.setItem("cipherAnswerCW", cw);
+      localStorage.setItem("cipherAnswerCCW", ccw);
+
+      console.log("Generated answers:", cw, ccw);
+    } else {
+      // 🔹 If constellation is already chosen, force re-sync with numbers
+      let starCount = constellationCounts[chosenStar];
+      let cw = caesarShift(chosenStar, starCount);
+      let ccw = caesarShift(chosenStar, -starCount);
+      localStorage.setItem("cipherAnswerCW", cw);
+      localStorage.setItem("cipherAnswerCCW", ccw);
+    }
+
+
+    // Step 3: Show the chosen constellation
+    const imgEl = document.getElementById("constellation");
     imgEl.src = starBackgrounds[chosenStar];
     imgEl.alt = chosenStar;
-  } else {
-    // hide image if there's no file mapped
-    imgEl.style.display = "none";
-    imgEl.alt = "Constellation image not available";
-  }
 
-  // Debug (remove/comment out in production)
-  console.log("Chosen star:", chosenStar);
-  console.log("Accepted answers (normalized):", acceptedAnswers);
-
-  // UI elements
-  const inputEl = document.getElementById("playerAnswer");
-  const resultEl = document.getElementById("result");
-  const submitBtn = document.getElementById("submitBtn");
-
-  // Check player's answer (case-insensitive, trimmed)
-  // REPLACE your existing checkAnswer() with this full function
-function checkAnswer() {
-  const input = document.getElementById("playerAnswer").value.trim().toLowerCase();
-  const result = document.getElementById("result");
-
-  if (!input) {
-    result.textContent = "✳️ Please enter an answer.";
-    result.style.color = "#ffd700";
-    return;
-  }
-
-  // Build acceptedAnswers the same way you saved them in Admin
-  const storedCW = localStorage.getItem("cipherAnswerCW");
-  const storedCCW = localStorage.getItem("cipherAnswerCCW");
-  const legacy = localStorage.getItem("cipherAnswer"); // compatibility
-
-  let acceptedAnswers = [];
-  if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
-  if (storedCCW) acceptedAnswers.push(storedCCW.toLowerCase().trim());
-  if (legacy) acceptedAnswers.push(legacy.toLowerCase().trim());
-  if (acceptedAnswers.length === 0) acceptedAnswers.push("victory");
-  acceptedAnswers = [...new Set(acceptedAnswers)];
-
-  // Correct branch: set vaultAccess and redirect
-  if (acceptedAnswers.includes(input)) {
-    // mark vault as unlocked (simple client-side token)
-    localStorage.setItem('vaultAccess', 'true');
-
-    // show feedback and then redirect
-    result.textContent = "✅ Correct! Opening vault...";
-    result.style.color = "#00ff00";
-    try { new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3").play(); } catch(e){}
-
-    setTimeout(() => {
-      window.location.href = "vault_hack.html";
-    }, 700);
-  } else {
-    // wrong answer handling
-    result.textContent = "❌ Wrong! Try again.";
-    result.style.color = "#ff4444";
-    try { new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3").play(); } catch(e){}
-  }
-}
+    console.log("Current constellation:", chosenStar);
 
 
-  // Submit on button click
-  submitBtn.addEventListener("click", checkAnswer);
+    /* -------------------------
+       ANSWER CHECKING
+    ------------------------- */
+    const inputEl = document.getElementById("playerAnswer");
+    const resultEl = document.getElementById("result");
+    const submitBtn = document.getElementById("submitBtn");
 
-  // Submit on Enter key
-  inputEl.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") checkAnswer();
-  });
+    function checkAnswer() {
+      const input = inputEl.value.trim().toLowerCase();
+      if (!input) {
+        resultEl.textContent = "✳️ Please enter an answer.";
+        resultEl.style.color = "#ffd700";
+        return;
+      }
 
-  // Go to Admin page
-  function goAdmin() {
-    window.location.href = "Admin.html";
-  }
-</script>
+      // Build accepted answers
+      const storedCW = localStorage.getItem("cipherAnswerCW");
+      const storedCCW = localStorage.getItem("cipherAnswerCCW");
+      const legacy = localStorage.getItem("cipherAnswer"); // compatibility
 
+      let acceptedAnswers = [];
+      if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
+      if (storedCCW) acceptedAnswers.push(storedCCW.toLowerCase().trim());
+      if (legacy) acceptedAnswers.push(legacy.toLowerCase().trim());
+      if (acceptedAnswers.length === 0) acceptedAnswers.push("victory");
+
+      acceptedAnswers = [...new Set(acceptedAnswers)];
+
+      // Correct branch
+      if (acceptedAnswers.includes(input)) {
+        localStorage.setItem('vaultAccess', 'true'); // mark vault unlocked
+        resultEl.textContent = "✅ Correct! Opening vault...";
+        resultEl.style.color = "#00ff00";
+        try { new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3").play(); } catch(e) {}
+
+        setTimeout(() => {
+          window.location.href = "vault_hack.html";
+        }, 700);
+      } else {
+        // Wrong answer
+        resultEl.textContent = "❌ Wrong! Try again.";
+        resultEl.style.color = "#ff4444";
+        try { new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3").play(); } catch(e) {}
+      }
+    }
+
+    // Events
+    submitBtn.addEventListener("click", checkAnswer);
+    inputEl.addEventListener("keydown", e => {
+      if (e.key === "Enter") checkAnswer();
+    });
+
+    /* -------------------------
+       ADMIN NAVIGATION
+    ------------------------- */
+    function goAdmin() {
+      window.location.href = "Admin.html";
+    }
+  </script>
 </body>
 </html>
