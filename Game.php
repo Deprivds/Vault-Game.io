@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Constellation Cipher Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url("background-space.gif") no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+    }
+
+    h1 { color: #ffd700; margin-bottom: 20px; }
+
+    #constellation {
+      max-width: 80%;
+      max-height: 400px;
+      margin-bottom: 30px;
+      border: 2px solid #444;
+      border-radius: 10px;
+      display: block;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      margin-bottom: 10px;
+      text-align: center;
+      width: 250px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #ffd700;
+    }
+
+    #result { margin-top: 15px; font-size: 18px; }
+
+    /* Hidden star button */
+    #adminStar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      color: transparent;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    #adminStar:hover { color: #ffd700; }
+  </style>
+</head>
+<body>
+  <h1>✨ Constellation Cipher ✨</h1>
+
+  <!-- Constellation image -->
+  <img id="constellation" src="" alt="Constellation">
+
+  <!-- Input box in center -->
+  <input type="text" id="playerAnswer" placeholder="Enter your answer..." autofocus>
+  <button id="submitBtn">Submit</button>
+
+  <!-- Result message instead of alert -->
+  <p id="result"></p>
+
+  <!-- Hidden Star Button -->
+  <button id="adminStar" onclick="goAdmin()">★</button>
+
+<script>
+  const starBackgrounds = {
+    "Aries": "Aries.jpg",
+    "Taurus": "Taurus.jpg",
+    "Gemini": "Gemini.jpg",
+    "Cancer": "Cancer.jpg",
+    "Leo": "Leo.jpg",
+    "Virgo": "Virgo.jpg",
+    "Libra": "Libra.jpg",
+    "Scorpio": "Scorpio.jpg",
+    "Sagittarius": "Sagittarius.jpg",
+    "Capricorn": "Capricorn.jpg",
+    "Aquarius": "Aquarius.jpg",
+    "Pisces": "Pisces.jpg"
+  };
+
+  // Read saved data from Admin (localStorage)
+  const chosenStar = localStorage.getItem("cipherStar") || "Aries";
+
+  // Accept multiple saved keys for compatibility
+  const storedCW = localStorage.getItem("cipherAnswerCW");
+  const storedCCW = localStorage.getItem("cipherAnswerCCW");
+  const legacy = localStorage.getItem("cipherAnswer"); // older key used in some versions
+
+  // Build the accepted answers list (normalized)
+  let acceptedAnswers = [];
+  if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
+  if (storedCCW) acceptedAnswers.push(storedCCW.toLowerCase().trim());
+  if (legacy) acceptedAnswers.push(legacy.toLowerCase().trim());
+
+  // If nothing stored, fallback to "victory" for backward compatibility / testing
+  if (acceptedAnswers.length === 0) acceptedAnswers.push("victory");
+
+  // Remove duplicates (if any)
+  acceptedAnswers = [...new Set(acceptedAnswers)];
+
+  // Set constellation image (fallback if missing)
+  const imgEl = document.getElementById("constellation");
+  if (starBackgrounds[chosenStar]) {
+    imgEl.src = starBackgrounds[chosenStar];
+    imgEl.alt = chosenStar;
+  } else {
+    // hide image if there's no file mapped
+    imgEl.style.display = "none";
+    imgEl.alt = "Constellation image not available";
+  }
+
+  // Debug (remove/comment out in production)
+  console.log("Chosen star:", chosenStar);
+  console.log("Accepted answers (normalized):", acceptedAnswers);
+
+  // UI elements
+  const inputEl = document.getElementById("playerAnswer");
+  const resultEl = document.getElementById("result");
+  const submitBtn = document.getElementById("submitBtn");
+
+  // Check player's answer (case-insensitive, trimmed)
+  // REPLACE your existing checkAnswer() with this full function
+function checkAnswer() {
+  const input = document.getElementById("playerAnswer").value.trim().toLowerCase();
+  const result = document.getElementById("result");
+
+  if (!input) {
+    result.textContent = "✳️ Please enter an answer.";
+    result.style.color = "#ffd700";
+    return;
+  }
+
+  // Build acceptedAnswers the same way you saved them in Admin
+  const storedCW = localStorage.getItem("cipherAnswerCW");
+  const storedCCW = localStorage.getItem("cipherAnswerCCW");
+  const legacy = localStorage.getItem("cipherAnswer"); // compatibility
+
+  let acceptedAnswers = [];
+  if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
+  if (storedCCW) acceptedAnswers.push(storedCCW.toLowerCase().trim());
+  if (legacy) acceptedAnswers.push(legacy.toLowerCase().trim());
+  if (acceptedAnswers.length === 0) acceptedAnswers.push("victory");
+  acceptedAnswers = [...new Set(acceptedAnswers)];
+
+  // Correct branch: set vaultAccess and redirect
+  if (acceptedAnswers.includes(input)) {
+    // mark vault as unlocked (simple client-side token)
+    localStorage.setItem('vaultAccess', 'true');
+
+    // show feedback and then redirect
+    result.textContent = "✅ Correct! Opening vault...";
+    result.style.color = "#00ff00";
+    try { new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3").play(); } catch(e){}
+
+    setTimeout(() => {
+      window.location.href = "vault_hack.html";
+    }, 700);
+  } else {
+    // wrong answer handling
+    result.textContent = "❌ Wrong! Try again.";
+    result.style.color = "#ff4444";
+    try { new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3").play(); } catch(e){}
+  }
+}
+
+
+  // Submit on button click
+  submitBtn.addEventListener("click", checkAnswer);
+
+  // Submit on Enter key
+  inputEl.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") checkAnswer();
+  });
+
+  // Go to Admin page
+  function goAdmin() {
+    window.location.href = "Admin.php";
+  }
+</script>
+
+</body>
+</html>

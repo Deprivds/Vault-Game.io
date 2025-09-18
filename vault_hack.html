@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Vault Hack — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{
+    --bg:#06070a;
+    --panel:#0f1720;
+    --accent:#00d1b2;
+    --danger:#ff6b6b;
+    --glass: rgba(255,255,255,0.04);
+  }
+  html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+  body{
+    /* 🔹 EDIT BACKGROUND HERE 🔹 */
+    background: url("background-hack.gif");
+    background-size: cover;
+    color:#dbeafe;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:28px;
+    padding:28px;
+    box-sizing:border-box;
+  }
+
+  .container { 
+    width:1080px; 
+    max-width:98vw; 
+    display:flex; 
+    gap:24px; 
+    align-items:flex-start; }
+
+  /* Left: Terminal */
+  .panel {
+    width:640px;              /* bigger width */
+    min-height:640px;         /* bigger height */
+    background:linear-gradient(180deg,var(--panel),rgba(8,12,16,0.9));
+    border-radius:12px;
+    padding:18px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+  .title { 
+    display:flex; 
+    align-items:center; 
+    gap:10px; 
+    margin-bottom:12px; 
+}
+  .dot { 
+    width:10px;
+    height:10px;
+    border-radius:50%; 
+    background:var(--accent); 
+    box-shadow:0 0 8px var(--accent); 
+}
+  h2 { 
+    margin:0;
+    font-size:20px; 
+    color:#e6fffb; 
+    letter-spacing:0.6px; 
+}
+  .screen {
+    background:linear-gradient(180deg,rgba(0,0,0,0.45), rgba(0,0,0,0.6));
+    height:440px;
+    border-radius:8px;
+    padding:12px;
+    overflow:auto;
+    font-family: "Courier New", monospace;
+    font-size:14px;
+    line-height:1.45;
+    color:#9feadd;
+    border:1px solid rgba(255,255,255,0.02);
+
+    /* 🔹 Hide scrollbar */
+    scrollbar-width: none; /* Firefox */
+    }
+    .screen::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+    }
+  .log { 
+    white-space:pre-wrap; 
+}
+  .controls { 
+    display:flex; 
+    gap:10px; 
+    margin-top:12px; 
+    align-items:center; 
+}
+  .btn {
+    background:linear-gradient(180deg,var(--accent), #00b89a);
+    color:#022; 
+    border:none; 
+    padding:12px 18px; 
+    border-radius:8px; 
+    cursor:pointer; 
+    font-weight:700;
+    box-shadow: 0 6px 18px rgba(0,200,180,0.08), inset 0 -2px 0 rgba(0,0,0,0.12);
+  }
+  .progressWrap { 
+    margin-top:14px; 
+}
+  .bar {
+    background:var(--glass); 
+    height:16px; 
+    border-radius:8px; 
+    overflow:hidden; 
+    border:1px solid rgba(255,255,255,0.03);
+  }
+  .barInner {
+    height:100%; 
+    width:0%; 
+    background:linear-gradient(90deg,var(--accent), #6ef0c9); 
+    transition:width 0.25s linear;
+  }
+  .percent { 
+    font-size:13px; 
+    color:#bfeee2; 
+    margin-top:6px; 
+}
+
+  /* Right: Vault */
+  .vaultWrap{
+    width:380px; 
+    min-height:540px; 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    gap:14px;
+  }
+  .vaultCard {
+    width:100%; 
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.4));
+    border-radius:12px; 
+    padding:18px; 
+    box-sizing:border-box; 
+    border:1px solid rgba(255,255,255,0.03);
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    gap:12px;
+  }
+
+  .vault {
+    width:280px; 
+    height:280px; 
+    background:linear-gradient(180deg,#121214,#0b0c0e); 
+    border-radius:12px; 
+    position:relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 4px 10px rgba(255,255,255,0.02);
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    overflow:visible;
+  }
+
+  .door {
+    position:absolute;
+    top:18px;
+    bottom:18px;
+    width:50%;                 /* always half of the vault */
+    background:linear-gradient(180deg,#23282d,#0f1416);
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#cfeee7;
+    font-weight:700;
+    font-size:18px;
+    letter-spacing:1px;
+    transform-origin: left center;
+    transition: transform 1.2s cubic-bezier(.2,.85,.2,1);
+    box-shadow: 0 6px 30px rgba(0,0,0,0.6), inset 0 -4px 10px rgba(255,255,255,0.02);
+    }
+
+    .door.right { 
+        right:18px; 
+        left:auto; 
+        transform-origin: right center; 
+    }
+    .door.left { 
+        left:18px; 
+    }
+    .door.left.closed  { 
+        transform: rotateY(0deg); 
+    }
+    .door.right.closed { 
+        transform: rotateY(0deg); 
+    }
+
+    .vault.open .door.left  { 
+        transform: rotateY(-110deg) translateX(-10px); 
+    }
+    .vault.open .door.right { 
+        transform: rotateY(110deg) translateX(10px); 
+    }
+  .wheel {
+    width:96px; 
+    height:96px; 
+    background:radial-gradient(circle at 40% 30%, #b9c1c6, #90979c); 
+    border-radius:50%;
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    z-index:5; 
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    transform-origin:center center; 
+    transition: transform 0.9s cubic-bezier(.2,.9,.2,1);
+  }
+  .vault.open .wheel { 
+    transform: scale(0.6) rotate(720deg); 
+    opacity:0.85; 
+}
+  .wheel::after{ 
+    content:""; 
+    width:6px; 
+    height:40px; 
+    background:#1b1f21; 
+    border-radius:3px; 
+    transform:rotate(20deg); 
+}
+
+  .status { 
+    font-size:14px; 
+    color:#c2f4e9; 
+}
+  .miniTerm{ 
+    width:100%; 
+    background:rgba(0,0,0,0.5); 
+    border-radius:8px; 
+    padding:10px; 
+    font-family:monospace; 
+    font-size:13px; 
+    color:#98f0dd; 
+}
+
+  /* Hidden star button */
+  #backStar {
+    position:absolute;
+    top:10px;
+    right:10px;
+    font-size:24px;
+    color:transparent;
+    background:none;
+    border:none;
+    cursor:pointer;
+  }
+  #backStar:hover { color:#ffd700; }
+
+  @media (max-width:1080px){ 
+    .container{
+        flex-direction:column; 
+        align-items:center;
+    } 
+        .panel{
+            width:95%;} 
+            .vaultWrap{
+                width:95%;
+                } }
+</style>
+</head>
+<body>
+  <button id="backStar" onclick="goBack()">★</button>
+
+  <div class="container">
+    <div class="panel" role="region" aria-label="Hacking Terminal">
+      <div class="title"><div class="dot"></div><h2>VAULT TERMINAL</h2></div>
+      <div id="screen" class="screen"><div id="log" class="log">Press START HACK to begin.</div></div>
+      <div class="controls">
+        <button id="startBtn" class="btn">START HACK</button>
+      </div>
+      <div class="progressWrap">
+        <div class="bar"><div id="barInner" class="barInner"></div></div>
+        <div class="percent" id="percentText">Progress: 0%</div>
+      </div>
+    </div>
+
+    <div class="vaultWrap">
+      <div class="vaultCard">
+        <div id="vault" class="vault">
+          <div class="door left closed" id="leftDoor"></div>
+          <div class="door right closed" id="rightDoor"></div>
+          <div class="wheel" id="wheel"></div>
+        </div>
+        <div class="status" id="status">STATUS: idle</div>
+        <div class="miniTerm" id="mini">waiting for command...</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const startBtn = document.getElementById('startBtn');
+const screenEl = document.getElementById('screen'); // **scrollable container**
+const logEl = document.getElementById('log');
+const barInner = document.getElementById('barInner');
+const percentText = document.getElementById('percentText'); 
+const vaultEl = document.getElementById('vault');
+const statusEl = document.getElementById('status');
+const miniEl = document.getElementById('mini');
+const wheelEl = document.getElementById('wheel');
+
+let progress = 0;
+let hacking = false;
+let stepTimer = null;
+
+// ---- Steps ----
+const steps = [
+  "[SYSTEM] Initializing secure channel...",
+  "[AGENT] Fingerprint scan ✓",
+  "[MODULE] Negotiating quantum handshake...",
+  "[MODULE] Allocating microthreads...",
+  "[CRACK] Locating legacy cipher tables...",
+  "[CRACK] Optimizing brute force kernel...",
+  "[DEPLOY] Injecting timing exploit...",
+  "[AGENT] Masking traffic, suppressing logs...",
+  "[MODULE] Reassembling rotated key shards...",
+  "[SYSTEM] Bypassing integrity watchdog...",
+  "[SYSTEM] Decrypting latch credentials...",
+  "[WRITER] Flashing unlock sequence to latch...",
+  "[SYSTEM] Committing transaction to hardware...",
+  "[SUCCESS] Access granted. Opening vault..."
+];
+
+const stepIncrement = Math.ceil(100 / steps.length);
+
+/* typeLog: types characters into logEl and scrolls the SCREEN container */
+function typeLog(text, charDelay = 14) {
+  return new Promise(resolve => {
+    let i = 0;
+    if (!logEl.innerText) logEl.innerText = "";
+    const charInterval = setInterval(() => {
+      if (i < text.length) {
+        logEl.innerText += text[i++];
+        // scroll the visible container, not the inner log
+        screenEl.scrollTop = screenEl.scrollHeight;
+      } else {
+        clearInterval(charInterval);
+        // ensure final scroll
+        screenEl.scrollTop = screenEl.scrollHeight;
+        resolve();
+      }
+    }, charDelay);
+  });
+}
+
+/* small beep for feedback (try/catch audio permission) */
+function beep(f = 700, t = 0.06) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.01);
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    setTimeout(() => { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.01); o.stop(); }, t * 1000);
+  } catch (e) { /* ignore audio errors */ }
+}
+
+/* compute delay per step based on current progress to make pacing dramatic:
+   - progress < 50%: medium pace
+   - 50% <= progress < 75%: slower
+   - 75% <= progress: slowest
+*/
+function getNextDelay(currentProgress) {
+  if (currentProgress < 50) return 550;   // medium pace
+  if (currentProgress < 75) return 900;   // a little slow
+  return 1400;                            // slow
+}
+
+/* main sequence runner (sequential, respects varying delays) */
+async function runStepsSequentially() {
+  // hide wheel during build-up
+  if (wheelEl) wheelEl.style.display = 'none';
+
+  for (let i = 0; i < steps.length; i++) {
+    await typeLog("\n" + steps[i] + "\n", 12);
+    beep(480 + i * 25, 0.05);
+
+    // update progress
+    progress = Math.min(100, progress + stepIncrement);
+    barInner.style.width = progress + "%";
+    percentText.textContent = "Progress: " + progress + "%";
+    miniEl.textContent = "stage " + (i + 1) + " / " + steps.length;
+
+    // compute a delay for the next step (dramatic pacing)
+    const delay = getNextDelay(progress);
+
+    // wait before continuing to next step (but allow immediate break if last step)
+    if (i < steps.length - 1) {
+      await new Promise(res => setTimeout(res, delay));
+    }
+  }
+
+  // ensure full complete
+  progress = 100;
+  barInner.style.width = "100%";
+  percentText.textContent = "Progress: 100%";
+
+  await typeLog("\n[SYSTEM] ACCESS GRANTED\n", 12);
+  beep(1600, 0.12);
+
+  // reveal wheel and open vault after a short pause
+  setTimeout(() => {
+    if (wheelEl) wheelEl.style.display = 'flex';
+    setTimeout(() => {
+      vaultEl.classList.add('open');
+      miniEl.textContent = "vault: UNLOCKED";
+      beep(1200,0.08); setTimeout(()=>beep(1400,0.08),120);
+      hacking = false;
+      startBtn.disabled = true;
+    }, 90);
+  }, 600);
+}
+
+/* start routine */
+function startHacking() {
+  if (hacking) return;
+  hacking = true;
+  startBtn.disabled = true;
+  statusEl.textContent = "STATUS: hacking...";
+  logEl.innerText = "";
+  screenEl.scrollTop = 0;
+  progress = 0;
+  barInner.style.width = "0%";
+  percentText.textContent = "Progress: 0%";
+  runStepsSequentially();
+}
+
+/* back button */
+function goBack() { window.location.href = "Game.php"; }
+
+startBtn.addEventListener('click', startHacking);
+document.getElementById('backStar').addEventListener('click', goBack);
+
+/* optional keyboard: H to start */
+document.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'h') startHacking(); });
+</script>
+</body>
+</html>
