@@ -28,6 +28,14 @@
       margin-bottom: 20px;
     }
 
+    /* 🌟 Star name display */
+    #starName {
+      font-size: 22px;
+      color: #ffd700;
+      margin: 5px 0 15px 0;
+      text-shadow: 0 0 8px #ffaa00;
+    }
+
     #constellation {
       max-width: 80%;
       max-height: 400px;
@@ -83,6 +91,9 @@
   ========================== -->
   <h1>✨ Constellation Cipher ✨</h1>
 
+  <!-- 🌌 Star name display -->
+  <h2 id="starName">Loading Constellation...</h2>
+
   <!-- Constellation image -->
   <img id="constellation" src="" alt="Constellation">
 
@@ -106,17 +117,14 @@
     ------------------------- */
     const cameFromAdmin = localStorage.getItem("backFromAdmin") === "true";
 
-    // If NOT coming from Admin, reset constellation so refresh always gets a new one
     if (!cameFromAdmin) {
       localStorage.removeItem("cipherStar");
       localStorage.removeItem("cipherAnswerCW");
       localStorage.removeItem("cipherAnswerCCW");
     } else {
-      // Clear the flag so next refresh works normally
       localStorage.removeItem("backFromAdmin");
     }
 
-    // Images for each constellation
     const starBackgrounds = {
       "Aries": "Aries.jpg",
       "Taurus": "Taurus.jpg",
@@ -132,7 +140,6 @@
       "Pisces": "Pisces.jpg"
     };
 
-    // Star counts (used for Caesar shift)
     const constellationCounts = {
       "Aries": 5,
       "Taurus": 11,
@@ -148,7 +155,6 @@
       "Pisces": 20
     };
 
-    // Caesar cipher helper
     function caesarShift(str, shift) {
       return str.split("").map(char => {
         if (/[a-z]/.test(char)) {
@@ -162,10 +168,8 @@
       }).join("");
     }
 
-    // Step 1: Check if a star is already stored
     let chosenStar = localStorage.getItem("cipherStar");
 
-    // Step 2: If not stored yet, randomize and store constellation + answers
     if (!chosenStar) {
       const constellationKeys = Object.keys(starBackgrounds);
       chosenStar = constellationKeys[Math.floor(Math.random() * constellationKeys.length)];
@@ -175,13 +179,9 @@
       let cw = caesarShift(chosenStar, starCount);
       let ccw = caesarShift(chosenStar, -starCount);
 
-      // 🔹 Always overwrite in case numbers changed
       localStorage.setItem("cipherAnswerCW", cw);
       localStorage.setItem("cipherAnswerCCW", ccw);
-
-      console.log("Generated answers:", cw, ccw);
     } else {
-      // 🔹 If constellation is already chosen, force re-sync with numbers
       let starCount = constellationCounts[chosenStar];
       let cw = caesarShift(chosenStar, starCount);
       let ccw = caesarShift(chosenStar, -starCount);
@@ -189,14 +189,12 @@
       localStorage.setItem("cipherAnswerCCW", ccw);
     }
 
-
-    // Step 3: Show the chosen constellation
+    // Show constellation image + name
     const imgEl = document.getElementById("constellation");
+    const nameEl = document.getElementById("starName");
     imgEl.src = starBackgrounds[chosenStar];
     imgEl.alt = chosenStar;
-
-    console.log("Current constellation:", chosenStar);
-
+    nameEl.textContent = "✨ " + chosenStar;
 
     /* -------------------------
        ANSWER CHECKING
@@ -213,10 +211,9 @@
         return;
       }
 
-      // Build accepted answers
       const storedCW = localStorage.getItem("cipherAnswerCW");
       const storedCCW = localStorage.getItem("cipherAnswerCCW");
-      const legacy = localStorage.getItem("cipherAnswer"); // compatibility
+      const legacy = localStorage.getItem("cipherAnswer");
 
       let acceptedAnswers = [];
       if (storedCW) acceptedAnswers.push(storedCW.toLowerCase().trim());
@@ -226,9 +223,8 @@
 
       acceptedAnswers = [...new Set(acceptedAnswers)];
 
-      // Correct branch
       if (acceptedAnswers.includes(input)) {
-        localStorage.setItem('vaultAccess', 'true'); // mark vault unlocked
+        localStorage.setItem('vaultAccess', 'true');
         resultEl.textContent = "✅ Correct! Opening vault...";
         resultEl.style.color = "#00ff00";
         try { new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3").play(); } catch(e) {}
@@ -237,14 +233,12 @@
           window.location.href = "vault_hack.html";
         }, 700);
       } else {
-        // Wrong answer
         resultEl.textContent = "❌ Wrong! Try again.";
         resultEl.style.color = "#ff4444";
         try { new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3").play(); } catch(e) {}
       }
     }
 
-    // Events
     submitBtn.addEventListener("click", checkAnswer);
     inputEl.addEventListener("keydown", e => {
       if (e.key === "Enter") checkAnswer();
