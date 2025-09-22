@@ -20,6 +20,14 @@
       padding: 20px; 
     }
 
+    /* 🌟 Star name display */
+    #starName {
+      font-size: 22px;
+      color: #ffd700;
+      margin: 10px 0;
+      text-shadow: 0 0 8px #ffaa00;
+    }
+
     label { 
       display: block; 
       margin: 15px; 
@@ -59,6 +67,9 @@
 
   <!-- 🛠️ ADMIN HEADER -->
   <h1>⚙️ Admin Settings</h1>
+
+  <!-- 🌌 STAR NAME DISPLAY -->
+  <h2 id="starName">Select a Constellation</h2>
   
   <!-- 🔭 CONSTELLATION DROPDOWN -->
   <label>
@@ -125,11 +136,14 @@
     });
 
     // ============================================================
-    // 4. UPDATE ANSWERS DISPLAY
+    // 4. UPDATE ANSWERS DISPLAY + STAR NAME
     // ============================================================
     function updateAnswers(constellation) {
       let starCount = constellations[constellation];
       let baseWord = constellation;
+
+      // 🔹 Update star name on top
+      document.getElementById("starName").textContent = "✨ " + constellation;
 
       let cw = caesarShift(baseWord, starCount);
       let ccw = caesarShift(baseWord, -starCount);
@@ -176,7 +190,6 @@
         localStorage.setItem("cipherAnswerCCW", ccw);
       }
     }
-
 
     // ============================================================
     // 8. BACK TO MAIN GAME
